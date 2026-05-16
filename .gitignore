@@ -4,6 +4,10 @@
 __pycache__/
 *.py[cod]
 .ohara/browser-profile/
+.ohara/playwright-cli-profile/
+.ohara/playwright-cli-scripts/
+.playwright-cli/
 .ohara/reviews/
 dist/
 build/
+docs/superpowers/

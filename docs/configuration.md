@@ -11,8 +11,13 @@ scanner = RepositoryScanner(
     include=["*.py", "*.toml", "*.md"],
     exclude=["fixtures", ".generated"],
     max_files=400,
+    review_mode="architecture-review",
 )
 ```
+
+`review_mode` controls mode-specific context and excludes. Architecture and startup
+readiness runs exclude `.sqlx` metadata by default; security audit runs may include it as
+database-shape context while still treating regex matches as triage candidates.
 
 ## Storage
 
@@ -23,16 +28,18 @@ from ohara.storage.filesystem import FileSystemStorage
 storage = FileSystemStorage(Path(".ohara/reviews"))
 ```
 
-## ChatGPT Provider
+## ChatGPT Playwright CLI Provider
 
 ```python
 from pathlib import Path
-from ohara.automation.chatgpt import ChatGPTPlaywrightProvider
+from ohara.automation.chatgpt import ChatGPTPlaywrightCliProvider
 
-provider = ChatGPTPlaywrightProvider(
-    user_data_dir=Path(".ohara/browser-profile"),
-    headless=False,
+provider = ChatGPTPlaywrightCliProvider(
+    command=("playwright-cli",),
+    session="ohara-chatgpt",
+    profile_dir=Path(".ohara/playwright-cli-profile"),
+    headed=True,
 )
 ```
 
-The provider is expected to reuse an authenticated browser session. Run once interactively, sign into ChatGPT, then reuse the same profile for later runs.
+The provider is expected to reuse an authenticated browser session. Run once interactively, sign into ChatGPT, then reuse the same CLI session/profile for later runs.

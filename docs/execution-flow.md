@@ -8,7 +8,7 @@ flowchart TD
     D --> E[ReviewTemplate]
     E --> F{Dry run or no browser?}
     F -- yes --> G[Save context only]
-    F -- no --> H[ChatGPT Playwright Provider]
+    F -- no --> H[ChatGPT Playwright CLI Provider]
     H --> I[Raw model response]
     I --> J[ReviewJsonParser]
     J --> K[Pydantic ReviewOutput]
@@ -27,6 +27,11 @@ Dry runs write `context.md`, `metadata.json`, `logs.txt`, and `history.jsonl`.
 
 ## Browser-Backed Run
 
-Browser-backed runs create a context package, render the selected prompt, submit it through the configured provider, parse the response, and write `review.json`.
+Browser-backed runs create a context package, render the selected prompt, submit it through
+the configured provider, save the raw assistant response, parse the response, and write
+`review.json`.
 
-The provider defaults to a persistent profile at `.ohara/browser-profile`.
+The provider defaults to a named Playwright CLI session and persistent profile at `.ohara/playwright-cli-profile`.
+
+If parsing or schema validation fails, Ohara still writes `raw-response.md` and
+`parse-error.txt` in the run directory so the response can be inspected and recovered.

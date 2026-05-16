@@ -28,4 +28,4 @@ async def submit_review(request: ReviewRequest) -> ReviewResponse:
     ...
 ```
 
-That is enough for Playwright, Playwright MCP, or desktop automation providers.
+That is enough for the current Playwright CLI provider or a future desktop automation provider.

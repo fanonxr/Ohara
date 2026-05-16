@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 RiskLevel = Literal["low", "medium", "high", "critical"]
 Severity = Literal["low", "medium", "high", "critical"]
+Confidence = Literal["high", "medium", "low"]
 
 
 class StrictModel(BaseModel):
@@ -19,6 +20,8 @@ class ReviewFinding(StrictModel):
     impact: str = ""
     recommendation: str = ""
     codex_hint: str = ""
+    confidence: Confidence
+    source_paths: list[str]
 
 
 class ImplementationStep(StrictModel):

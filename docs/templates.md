@@ -11,6 +11,11 @@ Each template defines:
 - `implementation_philosophy`
 - strict JSON output instructions
 
+Template prompts require evidence-grounded findings. They tell ChatGPT to avoid generic
+advice unless supported by context, call out weak evidence, distinguish confirmed findings
+from scanner heuristics, and treat secret regex matches as triage candidates unless literal
+credential material is shown.
+
 ## V1 Templates
 
 ### architecture-review
@@ -27,4 +32,6 @@ Focuses on delivery velocity, production readiness, operational maturity, highes
 
 ## Adding Templates
 
-Add a new `ReviewTemplate` to `TEMPLATES` and a test that confirms `list_templates()` includes it and `render_prompt()` includes strict JSON instructions.
+Add a new `ReviewTemplate` to `TEMPLATES` and a test that confirms `list_templates()`
+includes it and `render_prompt()` includes strict JSON instructions, confidence, source
+paths, and evidence-grounding guidance.

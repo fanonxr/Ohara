@@ -2,9 +2,11 @@
 
 Ohara is an AI-powered repository intelligence and deep review platform designed for Codex workflows.
 
-V1 implements `ohara:review`: a repository scanner, markdown context builder, review template system, ChatGPT browser automation boundary, strict JSON parser, and filesystem review store.
+V1 implements `ohara:review`: a repository scanner, semantic markdown context builder,
+review template system, ChatGPT browser automation boundary, strict JSON parser, and
+filesystem review store.
 
-Ohara does **not** use the OpenAI API. Its automation layer is designed to reuse authenticated ChatGPT browser sessions and ChatGPT Pro reasoning models through Playwright.
+Ohara does **not** use the OpenAI API. Its automation layer is designed to reuse authenticated ChatGPT browser sessions and ChatGPT Pro reasoning models through Microsoft `@playwright/cli`.
 
 ## Install
 
@@ -12,10 +14,11 @@ Ohara does **not** use the OpenAI API. Its automation layer is designed to reuse
 uv sync
 ```
 
-Install Playwright browsers when you want live ChatGPT automation:
+Install Playwright CLI when you want live ChatGPT automation:
 
 ```bash
-uv run playwright install chromium
+npm install -g @playwright/cli@latest
+playwright-cli --help
 ```
 
 ## CLI
@@ -60,9 +63,35 @@ metadata.json
 logs.txt
 raw-response.md      # browser-backed runs
 review.json          # validated strict JSON
+parse-error.txt      # browser-backed runs where JSON extraction/validation failed
 ```
 
 The JSON is validated by Pydantic and shaped for Codex workflows: critical issues, technical debt, security risks, scalability issues, architecture feedback, implementation plans, quick wins, Codex actions, and recommended execution order.
+Each finding includes evidence, confidence, and source paths so follow-up work can stay
+grounded in the repository context.
+
+## Context Quality
+
+Ohara context starts with a repository briefing and guidance summary before file inventory.
+It summarizes product purpose, monorepo shape, runtime components, local workflow, CI
+signals, shipped versus scaffolded areas, and known tradeoffs. It also compresses
+`AGENTS.md`, `CLAUDE.md`, `README.md`, architecture docs, and local specs instead of
+dumping them verbatim.
+
+The scanner detects common polyglot repo layouts, including Rust/Cargo, Axum/sqlx/Tokio,
+Flutter/Dart, Next.js/React/Tailwind, Terraform, Docker Compose, and GitHub Actions.
+Default excludes remove local agent/tool folders, dependency folders, build outputs,
+generated Dart files, `.sqlx` metadata for non-security reviews, and platform assets.
+
+## Browser Automation
+
+Ohara uses `playwright-cli`, not Playwright MCP and not the Python Playwright API. The default browser session is:
+
+```bash
+playwright-cli -s=ohara-chatgpt open https://chatgpt.com/ --persistent --profile=.ohara/playwright-cli-profile --headed
+```
+
+Sign into ChatGPT once in that headed browser. Later browser-backed runs reuse the named CLI session and persistent profile.
 
 ## Development
 

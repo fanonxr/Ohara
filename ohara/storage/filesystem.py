@@ -50,6 +50,23 @@ class FileSystemStorage:
         self._append_history(target, template, parsed=True)
         return StoredRun(path=target)
 
+    def save_parse_failure(
+        self,
+        template: str,
+        context_markdown: str,
+        raw_response: str,
+        error: str,
+        logs: list[str] | None = None,
+        run_path: Path | None = None,
+    ) -> StoredRun:
+        target = run_path or self._new_run_path(template)
+        target.mkdir(parents=True, exist_ok=True)
+        self._write_common(target, template, context_markdown, logs or [])
+        (target / "raw-response.md").write_text(raw_response, encoding="utf-8")
+        (target / "parse-error.txt").write_text(error.rstrip() + "\n", encoding="utf-8")
+        self._append_history(target, template, parsed=False)
+        return StoredRun(path=target)
+
     def _write_common(
         self,
         run_path: Path,

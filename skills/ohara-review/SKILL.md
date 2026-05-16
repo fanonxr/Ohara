@@ -9,7 +9,7 @@ description: Use when Codex or Claude needs repository intelligence, deep code r
 
 Use Ohara to scan repositories, build compact markdown context packages, submit review prompts through ChatGPT browser automation, parse strict JSON, and save review artifacts for Codex or Claude workflows.
 
-Ohara does not use the OpenAI API. Browser-backed runs are designed for authenticated ChatGPT Pro sessions via Playwright.
+Ohara does not use the OpenAI API. Browser-backed runs use the Microsoft `@playwright/cli` command, not Playwright MCP and not the Python Playwright API.
 
 ## Setup
 
@@ -20,6 +20,8 @@ From the Ohara repo root:
 ```bash
 skills/ohara-review/scripts/link-skill.sh
 uv sync
+npm install -g @playwright/cli@latest
+playwright-cli --help
 ```
 
 Manual symlink commands:
@@ -52,10 +54,17 @@ uv run ohara-review run --template security-audit --repo .
 uv run ohara review run --template startup-readiness --repo .
 ```
 
-Install Playwright browser support for live ChatGPT automation:
+Install or verify Playwright CLI support for live ChatGPT automation:
 
 ```bash
-uv run playwright install chromium
+npm install -g @playwright/cli@latest
+playwright-cli --help
+```
+
+If global install is not available, try a local install path and use that command consistently:
+
+```bash
+npx playwright-cli --help
 ```
 
 ## Review Templates
@@ -68,9 +77,28 @@ uv run playwright install chromium
 
 1. Locate the Ohara repo root. If this skill is symlinked, resolve the real path of this skill directory and go two directories up.
 2. Run a dry run first to inspect context quality.
-3. For browser-backed runs, ensure the ChatGPT browser profile is authenticated.
+3. For browser-backed runs, ensure the ChatGPT browser profile is authenticated using a persistent named CLI session.
 4. Use the generated `review.json` as machine-readable input for implementation, planning, or refactoring.
 5. Do not call the OpenAI API for this workflow.
+6. Do not use Playwright MCP for this workflow.
+
+## Playwright CLI Session
+
+Ohara defaults to:
+
+```bash
+playwright-cli -s=ohara-chatgpt open https://chatgpt.com/ --persistent --profile=.ohara/playwright-cli-profile --headed
+```
+
+Sign into ChatGPT in that browser once. Later `ohara:review` browser-backed runs reuse the same session/profile.
+
+Useful CLI commands:
+
+```bash
+playwright-cli list
+playwright-cli show
+playwright-cli -s=ohara-chatgpt close
+```
 
 ## Output Locations
 

@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ohara.automation.base import BrowserReviewProvider, ReviewRequest
-from ohara.automation.chatgpt import ChatGPTPlaywrightProvider
+from ohara.automation.chatgpt import ChatGPTPlaywrightCliProvider
 from ohara.context.builder import ContextBuilder
 from ohara.context.scanner import RepositoryScanner
-from ohara.parsers.json_parser import ReviewJsonParser
+from ohara.parsers.json_parser import ReviewJsonParser, ReviewParseError
 from ohara.schemas.review import ReviewOutput
 from ohara.storage.filesystem import FileSystemStorage
 from ohara.templates.registry import get_template
@@ -43,8 +43,9 @@ class ReviewRunner:
         use_browser: bool = True,
     ) -> ReviewRunResult:
         template = get_template(template_name)
+        self.scanner.review_mode = template.name
         scan = self.scanner.scan(repositories)
-        context_markdown = self.builder.build(scan)
+        context_markdown = self.builder.build(scan, template_name=template.name)
 
         if dry_run or not use_browser:
             artifact = self.storage.save_context(
@@ -64,20 +65,31 @@ class ReviewRunner:
             context_markdown=context_markdown,
             logs=["context generated"],
         )
-        prompt = template.render_prompt(context_markdown)
+        prompt = template.render_prompt("", context_delivery="uploaded")
         request = ReviewRequest(
             template_name=template.name,
             prompt=prompt,
             context_markdown=context_markdown,
             context_path=context_artifact.path / "context.md",
         )
-        provider = self.provider or ChatGPTPlaywrightProvider()
+        provider = self.provider or ChatGPTPlaywrightCliProvider()
         response = asyncio.run(provider.submit_review(request))
-        parsed = self.parser.parse(response.raw_text)
         logs = [
             f"model={response.model or 'unknown'}",
             *[f"{key}={value}" for key, value in response.metadata.items()],
         ]
+        try:
+            parsed = self.parser.parse(response.raw_text)
+        except ReviewParseError as exc:
+            self.storage.save_parse_failure(
+                template=template.name,
+                context_markdown=context_markdown,
+                raw_response=response.raw_text,
+                error=str(exc),
+                logs=[*logs, "parse failed"],
+                run_path=context_artifact.path,
+            )
+            raise
         artifact = self.storage.save_review(
             template=template.name,
             context_markdown=context_markdown,

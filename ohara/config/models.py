@@ -17,8 +17,10 @@ class ScannerConfig(BaseModel):
 class BrowserConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    user_data_dir: Path = Path(".ohara/browser-profile")
-    headless: bool = False
+    command: tuple[str, ...] = ("playwright-cli",)
+    session: str = "ohara-chatgpt"
+    profile_dir: Path = Path(".ohara/playwright-cli-profile")
+    headed: bool = True
     chatgpt_url: str = "https://chatgpt.com/"
     model: str | None = None
 

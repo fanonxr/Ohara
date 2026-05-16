@@ -4,7 +4,7 @@ Ohara is structured as a long-term skill ecosystem. V1 only implements `ohara:re
 
 ```text
 ohara/
-  automation/   browser provider protocol and ChatGPT Playwright provider
+  automation/   browser provider protocol and ChatGPT Playwright CLI provider
   cli/          Typer command surfaces
   config/       typed runtime configuration models
   context/      repository scanner and markdown context builder
@@ -31,10 +31,25 @@ This keeps the core review workflow testable without browser login state.
 
 ## Browser Automation
 
-`ChatGPTPlaywrightProvider` uses a persistent browser profile so authenticated ChatGPT sessions can be reused. Selectors are intentionally isolated in one provider because ChatGPT UI details are likely to change. Future providers can support Playwright MCP or desktop automation without changing scanner, templates, parser, storage, or CLI code.
+`ChatGPTPlaywrightCliProvider` shells out to Microsoft `@playwright/cli`. It uses a named session and persistent profile so authenticated ChatGPT sessions can be reused:
+
+```bash
+playwright-cli -s=ohara-chatgpt open https://chatgpt.com/ --persistent --profile=.ohara/playwright-cli-profile --headed
+```
+
+Selectors and CLI scripts are intentionally isolated in one provider because ChatGPT UI details are likely to change. Ohara does not use Playwright MCP for V1.
 
 ## Data Philosophy
 
-Markdown context is optimized for reasoning quality. It summarizes stack, dependencies, important files, directory structure, TODOs, risks, and system descriptions. It does not dump raw repository files.
+Markdown context is optimized for reasoning quality. It starts with a repository briefing,
+repository guidance summaries, review-mode rules, and high-signal source summaries before
+falling back to directory inventory. It does not dump raw repository files.
 
-JSON output is optimized for machine consumption. Pydantic schemas reject unknown top-level data and enforce a known risk vocabulary.
+The scanner is deterministic and heuristic-based. It detects stack and framework signals
+from manifests and layout, summarizes representative entrypoints and configuration files,
+and labels TODOs, possible secrets, and generated-file exclusions as scanner heuristics
+instead of confirmed findings.
+
+JSON output is optimized for machine consumption. Pydantic schemas reject unknown data,
+enforce a known risk vocabulary, and require each finding to include confidence and source
+paths.

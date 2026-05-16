@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from ohara.automation.chatgpt import extract_assistant_response_text
 from ohara.parsers.json_parser import ReviewJsonParser, ReviewParseError
 from ohara.storage.filesystem import FileSystemStorage
 
@@ -54,6 +55,40 @@ Thanks."""
     assert parsed.template == "security-audit"
 
 
+def test_parser_extracts_first_valid_review_json_from_chatgpt_page_text() -> None:
+    raw = """
+ChatGPT
+Upgrade plan
+{"ui":"not a review"}
+---OHARA_ASSISTANT_MESSAGE---
+Earlier answer
+{"template": "startup-readiness", "summary": "old", "overall_risk": "low"}
+---OHARA_ASSISTANT_MESSAGE---
+Copy code
+{
+  "template": "architecture-review",
+  "summary": "Grounded in repo context.",
+  "overall_risk": "medium",
+  "critical_issues": [],
+  "technical_debt": [],
+  "security_risks": [],
+  "scalability_issues": [],
+  "architecture_feedback": [],
+  "implementation_plan": [],
+  "quick_wins": [],
+  "codex_actions": [],
+  "recommended_execution_order": []
+}
+ChatGPT can make mistakes.
+"""
+
+    assistant_text = extract_assistant_response_text(raw)
+    parsed = ReviewJsonParser().parse(assistant_text)
+
+    assert parsed.template == "architecture-review"
+    assert parsed.summary == "Grounded in repo context."
+
+
 def test_parser_raises_for_invalid_schema() -> None:
     with pytest.raises(ReviewParseError):
         ReviewJsonParser().parse('{"template": "x"}')
@@ -76,3 +111,22 @@ def test_storage_writes_run_artifacts(tmp_path: Path) -> None:
     assert (run.path / "review.json").exists()
     assert (run.path / "logs.txt").read_text(encoding="utf-8") == "created\n"
     assert (tmp_path / "history.jsonl").exists()
+
+
+def test_storage_writes_parse_failure_artifacts(tmp_path: Path) -> None:
+    storage = FileSystemStorage(tmp_path)
+
+    run = storage.save_parse_failure(
+        template="architecture-review",
+        context_markdown="# Context",
+        raw_response="not json",
+        error="Response did not contain a JSON object.",
+        logs=["parse failed"],
+    )
+
+    assert (run.path / "context.md").exists()
+    assert (run.path / "raw-response.md").read_text(encoding="utf-8") == "not json"
+    assert "Response did not contain" in (run.path / "parse-error.txt").read_text(
+        encoding="utf-8"
+    )
+    assert not (run.path / "review.json").exists()
