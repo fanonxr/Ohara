@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ohara Review"
+  short_description: "Deep repository review for Codex workflows"
+  default_prompt: "Use $ohara-review to run a deep repository review and produce strict JSON findings."
+policy:
+  allow_implicit_invocation: true

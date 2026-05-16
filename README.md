@@ -36,6 +36,14 @@ The repository also includes a local wrapper for the requested skill-style comma
 
 Python packaging does not allow `:` inside console-script executable names, so the wrapper delegates to the local virtualenv `ohara-review` entrypoint when available.
 
+## Agent Skill Setup
+
+Ohara includes a reusable skill source at `skills/ohara-review/SKILL.md`. Keep that directory as the source of truth and symlink it into Claude/Codex skill roots:
+
+```bash
+skills/ohara-review/scripts/link-skill.sh
+```
+
 ## V1 Templates
 
 - `architecture-review` - architecture boundaries, maintainability, testability, and evolution risk
